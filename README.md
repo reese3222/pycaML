@@ -4,7 +4,10 @@
 pycaML is an easy machine learning model comparison tool with optimization. It allows to generate a table comparing multiple machine learning models, to see which one is best for your data.
 The unique feature of pycaML is built-in hyperparameters tuning using Bayesian Optimization. It also supports meta-models like Stacking and Voting ensembles. You can setup and optimize 16 models with one line of code.
 
-## Key Features
+# Installation  
+```python pip install pycaML```
+
+# Key Features
 
 * Compare up to 16 different models with one line of code
 * Hyperparameters tuning with built-in search spaces
