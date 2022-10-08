@@ -10,7 +10,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
+TODO
 downloads/
 eggs/
 .eggs/
@@ -19,6 +19,7 @@ lib64/
 parts/
 sdist/
 var/
+TODO
 wheels/
 pip-wheel-metadata/
 share/python-wheels/
@@ -26,7 +27,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
+preprocess.py
+test/
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -131,3 +133,4 @@ experiments/
 catboost_info/
 __pycache__/
 test.ipynb
+TODO

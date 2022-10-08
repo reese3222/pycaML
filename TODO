@@ -1,3 +1,7 @@
 ☐ Models and search spaces from json file
 ☐ Add more models
 ☐ Add more metrics
+☐ Replace linear regression with Lasso, Ridge and Elastic Net
+☐ CLI interface
+☐ Get models
+☐ Get params
