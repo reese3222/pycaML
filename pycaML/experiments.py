@@ -16,9 +16,6 @@ from .models import bagging_models, boosting_models, simple_models_reg, simple_m
 
 
 class Experiment():
-    """
-    Provides some arithmetic functions
-    """
     default = None
     tuned = None
     stacking = None
