@@ -8,7 +8,7 @@ The unique feature of pycaML is built-in hyperparameters tuning using Bayesian O
 ```python pip install pycaML```
 
 # Usage
-Check out the ![example notebook](https://github.com/reese3222/pycaML/blob/main/notebooks/regression_example/regression.ipynb)
+Check out the [example notebook](https://github.com/reese3222/pycaML/blob/main/notebooks/regression_example/regression.ipynb).
 
 # Key Features
 
