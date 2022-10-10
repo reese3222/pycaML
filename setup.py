@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 setup(
     name='pycaML',
-    version='0.0.3',
+    version='0.1.0',
     author='Donato Riccio',
     description='Python Comparative Analysis for Machine Learning',
     long_description='pycaML is an easy machine learning model comparison tool with optimization. It allows to generate a table comparing multiple machine learning models, to see which one is best for your data. The unique feature of pycaML is built-in hyperparameters tuning using Bayesian Optimization. It also supports meta-models like Stacking and Voting ensembles. You can setup and optimize 16 models with one line of code.',

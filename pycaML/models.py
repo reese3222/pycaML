@@ -26,6 +26,9 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import RidgeClassifier
+from sklearn.linear_model import Ridge
+from sklearn.linear_model import Lasso
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from interpret.glassbox import ExplainableBoostingClassifier
@@ -33,13 +36,25 @@ from interpret.glassbox import ExplainableBoostingRegressor
 
 bagging_models = ['Random Forest', 'ExtraTrees']
 boosting_models = ['EBM', 'XGBoost', 'CatBoost', 'LightGBM', 'Gradient Boost']
-simple_models_reg = ['KNN', 'Linear Regression', 'Decision Tree']
+simple_models_reg = ['KNN', 'Elastic Net', 'Decision Tree']
 simple_models_class = ['KNN', 'Logistic Regression', 'Decision Tree']
 
 space_en = {
     'random_state': 322,
-    # 'alpha': hp.uniform('alpha', 0,100),
+    'alpha': hp.uniform('alpha', 0,10),
     'l1_ratio': hp.uniform('l1_ratio', 0, 1),
+    'max_iter': scope.int(hp.quniform('max_iter', 200, 5000, 100))
+            }
+
+space_lasso = {
+    'random_state': 322,
+    'alpha': hp.uniform('alpha', 0,10),
+    'max_iter': scope.int(hp.quniform('max_iter', 200, 5000, 100))
+            }
+
+space_ridge = {
+    'random_state': 322,
+    'alpha': hp.uniform('alpha', 0,10),
     'max_iter': scope.int(hp.quniform('max_iter', 200, 5000, 100))
             }
 
@@ -206,6 +221,12 @@ models_class = {
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
+        'Ridge Classifier': {
+            'algo': RidgeClassifier,
+            'space': space_ridge,
+            'opt_params': {},
+            'def_params': {'random_state': 322}
+            },
     }
 
 
@@ -310,9 +331,21 @@ models_reg = {
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
-        'Linear Regression': {
+        'Elastic Net': {
             'algo': ElasticNet,
             'space': space_en,
+            'opt_params': {},
+            'def_params': {'random_state': 322}
+            },
+        'Lasso': {
+            'algo': Lasso,
+            'space': space_lasso,
+            'opt_params': {},
+            'def_params': {'random_state': 322}
+            },
+        'Ridge': {
+            'algo': Ridge,
+            'space': space_ridge,
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
