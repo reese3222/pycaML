@@ -16,9 +16,7 @@ from .models import bagging_models, boosting_models, simple_models_reg, simple_m
 
 
 class Experiment():
-    default = None
-    tuned = None
-    stacking = None
+    result = None
     names = []
     params = []
     spaces = []
@@ -39,23 +37,6 @@ class Experiment():
         self.tuning = tuning
         self.stacking = stacking
         self.name = name
-        if isinstance(self, BinaryClassificationExperiment):
-            self.models = models_class
-            self.stacking_models = models_stacking_class
-            self.scoring = ('f1', 'precision', 'recall')
-            self.stacking_estimators_names_diverse = simple_models_class
-
-        elif isinstance(self, RegressionExperiment):
-            self.stacking_models = models_stacking_reg
-            self.models = models_reg
-            self.scoring = ['neg_mean_squared_error']
-            self.stacking_estimators_names_diverse = simple_models_reg
-
-        else:
-            self.stacking_models = models_stacking_class
-            self.models = models_class
-            self.scoring = ['f1_weighted']
-            self.stacking_estimators_names_diverse = simple_models_class
 
         dirs = ['params', 'trials', 'tables', 'data']
         for i in dirs:
@@ -64,27 +45,20 @@ class Experiment():
                 os.makedirs(path)
                 print(f'Directory {path} created!')
 
-        if tuning:
-            file = f'experiments/{self.name}/tables/{self.name}_tuned.csv'
-            if exists(file):
-                self.tuned = pd.read_csv(file)
-                print('Result loaded')
-                if stacking is True:
-                    best_boosting = self.tuned.loc[self.tuned['Model'].isin(boosting_models)].iloc[0, 0]
-                    best_bagging = self.tuned.loc[self.tuned['Model'].isin(bagging_models)].iloc[0, 0]
-                    self.stacking_estimators_names_diverse.append(best_bagging)
-                    self.stacking_estimators_names_diverse.append(best_boosting)
 
+        if tuning is True and stacking is True:
+            self.exp_type = 'stacking_tuning'
+        elif tuning is True and stacking is False:
+            self.exp_type = 'tuning'
+        elif tuning is False and stacking is True:
+            self.exp_type = 'stacking'
         else:
-            file = f'experiments/{self.name}/tables/{self.name}_def.csv'
-            if exists(file):
-                self.default = pd.read_csv(file)
-                print('Result loaded')
-                if stacking is True:
-                    best_boosting = self.default.loc[self.default['Model'].isin(boosting_models)].iloc[0, 0]
-                    best_bagging = self.default.loc[self.default['Model'].isin(bagging_models)].iloc[0, 0]
-                    self.stacking_estimators_names_diverse.append(best_bagging)
-                    self.stacking_estimators_names_diverse.append(best_boosting)
+            self.exp_type = 'default'
+
+        file = f'experiments/{self.name}/tables/{self.name}_{self.exp_type}.csv'
+        if exists(file):
+            self.result = pd.read_csv(file)
+            print('Result loaded')
 
         for i in self.models.keys():
             # function that loads parameters from file
@@ -94,11 +68,6 @@ class Experiment():
                     self.models[i]['opt_params'] = pickle.load(f)
                     # print(f'Parameters for {i} loaded')
                     # print(self.models[i]['opt_params'] )
-
-        file = f'experiments/{self.name}/tables/{self.name}_stacking.csv'
-        if exists(file):
-            self.stacking = pd.read_csv(file)
-            print('Result loaded')
 
         self.dataset = [
                         f'experiments/{self.name}/data/X_train.csv',
@@ -136,51 +105,12 @@ class Experiment():
             self.y_train = self.y_train.to_numpy().ravel()
             self.y_test = self.y_test.to_numpy().ravel()
 
-    def warn(self, warn=True):
-        import sys
-        import warnings
-        if not sys.warnoptions and warn is False:
-            warnings.simplefilter("ignore")
-
     # trains the models and saves the results
     def start(self,  cv=5, raise_errors=False, n_eval=100):
-        tables_path = f'experiments/{self.name}/tables/{self.name}'
-        if self.tuning is False and self.stacking is False:
-            if isinstance(self, RegressionExperiment):
-                self.models['Linear Regression']['algo'] = LinearRegression
-                self.models['Linear Regression']['def_params'] = {}
-            if exists(f'{tables_path}_def.csv'):
-                return None
-        elif self.tuning is False and self.stacking is True:
-            if isinstance(self, RegressionExperiment):
-                self.models['Linear Regression']['algo'] = LinearRegression
-                self.models['Linear Regression']['def_params'] = {}
-
-            if exists(f'{tables_path}_def_stacking.csv'):
-                return None
-            # load default table
-            elif exists(f'{tables_path}_def.csv'):
-                self.default = pd.read_csv(f'{tables_path}_def.csv')
-            else:
-                self.stacking = False
-
-        elif self.tuning is True and self.stacking is False:
-            if exists(f'{tables_path}_tuned.csv'):
-                return None
-        elif self.tuning is True and self.stacking is True:
-            if exists(f'{tables_path}_tuned_stacking.csv'):
-                return None
-            # load default table
-            elif exists(f'{tables_path}_tuned.csv'):
-                self.tuned = pd.read_csv(f'{tables_path}_tuned.csv')
-            else:
-                self.stacking = False
-
-        if self.stacking is True:
-            self.build_stack()
-            self.models = self.stacking_models.copy()
-
+        if self.result is not None:
+            return
         if isinstance(self, RegressionExperiment):
+            self.scoring = ['neg_mean_squared_error']
             mean_mse = []
             std_mse = []
             mse_test = []
@@ -192,6 +122,12 @@ class Experiment():
             duration_time = []
             precision = []
             recall = []
+            self.n_classes = len(np.unique(self.y_train))
+            self.scoring = ['f1_weighted'] if self.n_classes > 2 else ['f1', 'precision', 'recall']
+
+        if self.stacking:
+            self.build_stack()
+            self.models = self.stacking_models.copy()
 
         for (k, model_name) in enumerate(self.models.keys()):
             now = datetime.now()
@@ -199,7 +135,7 @@ class Experiment():
             if self.stacking is True:
                 model = self.models[model_name]
 
-            if self.tuning is True and self.stacking is False:
+            if self.exp_type == 'tuning':
                 model = self.models[model_name]
                 print(current_time, ': 📘 Optimizing', model_name, '📘')
 
@@ -221,15 +157,13 @@ class Experiment():
             else:
                 model = self.models[model_name]['algo'](**self.models[model_name]['def_params'])
 
-            n_j = 1 if model_name in ['XGB', 'LGBM'] else self.n_j
-
             print(f'{current_time}: Training {model_name} {k+1}/{len(self.models)+1}          ', end='\r')
             scores = cross_validate(model,
                                     self.X_train,
                                     self.y_train,
                                     scoring=self.scoring,
                                     cv=cv,
-                                    n_jobs=n_j,
+                                    n_jobs=self.n_j,
                                     error_score="raise"
                                     )
 
@@ -242,25 +176,26 @@ class Experiment():
                 mse_test.append(np.sqrt(metrics.mean_squared_error(self.y_test, y_pred)))
                 duration_time.append(mean(scores['fit_time']))
                 std_mse.append(np.std(np.sqrt(-scores['test_neg_mean_squared_error'])))
-            elif isinstance(self, MulticlassExperiment):
-                mean_F1.append(mean(scores['test_f1_weighted']))
-                std_F1.append(np.std(scores['test_f1_weighted']))
-                F1_test.append(metrics.f1_score(self.y_test, y_pred, average='weighted'))
-                duration_time.append(mean(scores['fit_time']))
             else:
-                mean_F1.append(mean(scores['test_f1']))
-                std_F1.append(np.std(scores['test_f1']))
-                F1_test.append(metrics.f1_score(self.y_test, y_pred))
-                duration_time.append(mean(scores['fit_time']))
-                precision.append(metrics.precision_score(self.y_test, y_pred))
-                recall.append(metrics.recall_score(self.y_test, y_pred))
+                if self.n_classes > 2:
+                    mean_F1.append(mean(scores['test_f1_weighted']))
+                    std_F1.append(np.std(scores['test_f1_weighted']))
+                    F1_test.append(metrics.f1_score(self.y_test, y_pred, average='weighted'))
+                    duration_time.append(mean(scores['fit_time']))
+                else:
+                    mean_F1.append(mean(scores['test_f1']))
+                    std_F1.append(np.std(scores['test_f1']))
+                    F1_test.append(metrics.f1_score(self.y_test, y_pred))
+                    duration_time.append(mean(scores['fit_time']))
+                    precision.append(metrics.precision_score(self.y_test, y_pred))
+                    recall.append(metrics.recall_score(self.y_test, y_pred))
 
         if isinstance(self, RegressionExperiment):
             result = {
                 'Model': self.models.keys(),
                 'RMSE_test': mse_test,
                 'RMSE_cv': mean_mse,
-                'rmse_Std': std_mse,
+                'RMSE_std': std_mse,
                 'Time': duration_time,
             }
 
@@ -275,28 +210,14 @@ class Experiment():
                 'Time': duration_time,
             }
 
-            if isinstance(self, BinaryClassificationExperiment):
+            if self.n_classes == 2:
                 result['Precision_test'] = precision
                 result['Recall_test'] = recall
 
             result = pd.DataFrame(result).sort_values(by='F1_test', ascending=False)
 
         self.result = result
-        if self.tuning is True and self.stacking is False:
-            self.tuned = result
-            result.to_csv(f'{tables_path}_tuned.csv', index=False)
-
-        elif self.tuning is True and self.stacking is True:
-            self.stacking_tuned = result
-            result.to_csv(f'{tables_path}_tuned_stacking.csv', index=False)
-
-        elif self.tuning is False and self.stacking is False:
-            self.default = result
-            result.to_csv(f'{tables_path}_def.csv', index=False)
-
-        elif self.tuning is False and self.stacking is True:
-            self.stacking_default = result
-            result.to_csv(f'{tables_path}_def_stacking.csv', index=False)
+        result.to_csv(f'experiments/{self.name}/tables/{self.name}_{self.exp_type}.csv', index=False)
 
     def optimize_model(self, model_name, n_eval):
         def objective(space, model=self.models[model_name]['algo']):
@@ -314,7 +235,7 @@ class Experiment():
                     trials=trial,
                     show_progressbar=True
                     )
-        file = 'experiments/' + self.name + '/trials/trial_' + self.name + '_' + model_name + '.pkl'
+        file = f'experiments/{self.name}/trials/trial_{self.name}_{model_name}.pkl'
         with open(file, 'wb+') as f:
             pickle.dump(trial, f)
         return space_eval(self.models[model_name]['space'], best)
@@ -322,13 +243,21 @@ class Experiment():
     # method used for passing the parameters to the model.
     # Stacking diverse models takes the best model from boosting and the best model from bagging
     def build_stack(self):
-        if self.tuning is False:
-            estimators_stacking_all = [(i, j['algo'](**self.models[i]['def_params'])) for i, j in self.models.items()]
-        else:
+        if self.tuning:
+            base_result = pd.read_csv(f'experiments/{self.name}/tables/{self.name}_tuning.csv')
             estimators_stacking_all = [(i, j['algo'](**self.models[i]['opt_params'])) for i, j in self.models.items()]
+        else:
+            base_result = pd.read_csv(f'experiments/{self.name}/tables/{self.name}_default.csv')
+            estimators_stacking_all = [(i, j['algo'](**self.models[i]['def_params'])) for i, j in self.models.items()]
+
+        best_boosting = base_result.loc[base_result['Model'].isin(boosting_models)].iloc[0, 0]
+        best_bagging = base_result.loc[base_result['Model'].isin(bagging_models)].iloc[0, 0]
+        self.stacking_estimators_names_diverse.append(best_bagging)
+        self.stacking_estimators_names_diverse.append(best_boosting)
 
         self.stacking_models['Stacking (all)']['def_params']['estimators'] = estimators_stacking_all
-        self.stacking_models['Voting (all)']['def_params']['estimators'] = estimators_stacking_all
+        #delete Ridge Classifier from the list of estimators for the diverse stacking
+        self.stacking_models['Voting (all)']['def_params']['estimators'] = [i for i in estimators_stacking_all if i[0] != 'Ridge Classifier']
         self.stacking_models_diverse = {m: self.models[m] for m in self.stacking_estimators_names_diverse}
 
         stack_dict = self.stacking_models_diverse.items()
@@ -343,14 +272,16 @@ class Experiment():
 
 class RegressionExperiment(Experiment):
     def __init__(self, name, tuning=False, stacking=False):
+        self.stacking_models = models_stacking_reg
+        self.models = models_reg
+        self.scoring = ['neg_mean_squared_error']
+        self.stacking_estimators_names_diverse = simple_models_reg
         super().__init__(name=name, tuning=tuning, stacking=stacking)
 
 
-class BinaryClassificationExperiment(Experiment):
+class ClassificationExperiment(Experiment):
     def __init__(self, name, tuning=False, stacking=False):
-        super().__init__(name=name, tuning=tuning, stacking=stacking)
-
-
-class MulticlassExperiment(Experiment):
-    def __init__(self, name, tuning=False, stacking=False):
+        self.models = models_class
+        self.stacking_models = models_stacking_class
+        self.stacking_estimators_names_diverse = simple_models_class
         super().__init__(name=name, tuning=tuning, stacking=stacking)

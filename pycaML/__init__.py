@@ -1,1 +1,1 @@
-from .experiments import RegressionExperiment, BinaryClassificationExperiment, MulticlassExperiment
+from .experiments import RegressionExperiment, ClassificationExperiment
