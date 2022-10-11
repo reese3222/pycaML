@@ -5,7 +5,6 @@ import os
 import pickle
 from os.path import exists
 from sklearn import metrics
-from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_validate
 from datetime import datetime
 from statistics import mean
@@ -44,7 +43,6 @@ class Experiment():
             if not exists(path):
                 os.makedirs(path)
                 print(f'Directory {path} created!')
-
 
         if tuning is True and stacking is True:
             self.exp_type = 'stacking_tuning'
@@ -189,6 +187,7 @@ class Experiment():
                     duration_time.append(mean(scores['fit_time']))
                     precision.append(metrics.precision_score(self.y_test, y_pred))
                     recall.append(metrics.recall_score(self.y_test, y_pred))
+        # append to the results dataframe the results of the model
 
         if isinstance(self, RegressionExperiment):
             result = {
@@ -222,7 +221,13 @@ class Experiment():
     def optimize_model(self, model_name, n_eval):
         def objective(space, model=self.models[model_name]['algo']):
             model = model(**space)
-            losses = model_selection.cross_val_score(model, self.X_train, self.y_train, scoring=self.scoring[0], n_jobs=self.n_j)
+            losses = model_selection.cross_val_score(
+                model,
+                self.X_train,
+                self.y_train,
+                scoring=self.scoring[0],
+                n_jobs=self.n_j)
+
             return {'status': STATUS_OK,
                     'loss': -mean(losses),
                     'loss_variance': np.var(losses, ddof=1)}
@@ -256,8 +261,8 @@ class Experiment():
         self.stacking_estimators_names_diverse.append(best_boosting)
 
         self.stacking_models['Stacking (all)']['def_params']['estimators'] = estimators_stacking_all
-        #delete Ridge Classifier from the list of estimators for the diverse stacking
-        self.stacking_models['Voting (all)']['def_params']['estimators'] = [i for i in estimators_stacking_all if i[0] != 'Ridge Classifier']
+        voting_estimators = [i for i in estimators_stacking_all if i[0] != 'Ridge Classifier']
+        self.stacking_models['Voting (all)']['def_params']['estimators'] = voting_estimators
         self.stacking_models_diverse = {m: self.models[m] for m in self.stacking_estimators_names_diverse}
 
         stack_dict = self.stacking_models_diverse.items()
