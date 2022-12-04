@@ -1,4 +1,6 @@
-# this file is used for storing search spaces and models
+"""
+This module is used to store the models  and search spaces used in pycaML.
+"""
 
 from sklearn import linear_model
 from hyperopt import hp
@@ -111,7 +113,7 @@ space_xgb = {
     'alpha': hp.choice('alpha', [0, hp.loguniform('alpha_positive', -16, 2)]),
     'lambda': hp.choice('lambda', [0, hp.loguniform('lambda_positive', -16, 2)]),
     'gamma': hp.choice('gamma', [0, hp.loguniform('gamma_positive', -16, 2)]),
-    'tree_method': hp.choice('tree_method', ['gpu_hist'])
+    # 'tree_method': hp.choice('tree_method', ['gpu_hist'])
 }
 
 space_lgbm = {
@@ -122,8 +124,7 @@ space_lgbm = {
     'max_depth':        hp.choice('max_depth', [-1, scope.int(hp.uniform('max_depth2', 1, 8))]),
     'feature_fraction': hp.uniform('feature_fraction', 0.5, 1),
     'lambda_l1': hp.choice('lambda_l1', [0, hp.loguniform('lambda_l1_positive', -16, 2)]),
-    'lambda_l2': hp.choice('lambda_l2', [0, hp.loguniform('lambda_l2_positive', -16, 2)]),
-    'device': hp.choice('device', ['gpu'])
+    'lambda_l2': hp.choice('lambda_l2', [0, hp.loguniform('lambda_l2_positive', -16, 2)])
 }
 
 space_adab = {
@@ -249,9 +250,8 @@ space_omp = {
     'n_nonzero_coefs': scope.int(hp.uniform('n_nonzero_coefs', 1, 100)),
     'tol': hp.loguniform('tol', -10, -1),
     'precompute': hp.choice('precompute', ['auto', True, False]),
-    'normalize': hp.choice('normalize', [True, False]),
+    'normalize': hp.choice('normalize', [False]),
     'fit_intercept': hp.choice('fit_intercept', [True, False]),
-
     }
 
 space_knn = {
@@ -263,7 +263,7 @@ space_knn = {
 
 space_lars = {
     'fit_intercept': hp.choice('fit_intercept', [True, False]),
-    'normalize': hp.choice('normalize', [True, False]),
+    'normalize': hp.choice('normalize', [False]),
     'n_nonzero_coefs': scope.int(hp.uniform('n_nonzero_coefs', 1, 100)),
     'eps': hp.loguniform('eps', -10, -1),
     'random_state': 322,
@@ -281,8 +281,8 @@ space_svc = {
     'cache_size': hp.loguniform('cache_size', 1, 4),
     'class_weight': hp.choice('class_weight', [None, 'balanced']),
     'max_iter': scope.int(hp.uniform('max_iter', -1, 10000)),
-    'decision_function_shape': hp.choice('decision_function_shape', ['ovo', 'ovr']),
-    'break_ties': hp.choice('break_ties', [False, True]),
+    'decision_function_shape': hp.choice('decision_function_shape', ['ovr']),
+    # 'break_ties': hp.choice('break_ties', [False]),
     'random_state': 322
     }
 
@@ -387,7 +387,7 @@ space_bagging_class = {
         PassiveAggressiveClassifier(),
         Perceptron(),
         PassiveAggressiveClassifier(),
-        SVC(),  SVR(), MLPClassifier(),
+        MLPClassifier(),
         DecisionTreeClassifier(),
         KNeighborsClassifier(),
         GaussianNB()
@@ -416,42 +416,14 @@ space_theil = {
     }
 
 models_stacking_reg = {
-        'Stacking (all)': {
-            'algo': StackingRegressor,
-            'def_params': {'final_estimator': linear_model.LinearRegression()},
-            },
-        'Voting (all)': {
-            'algo': VotingRegressor,
-            'def_params': {},
-            },
-
-        'Stacking (diverse)': {
-            'algo': StackingRegressor,
-            'def_params': {'final_estimator': linear_model.LinearRegression()},
-            },
-        'Voting (diverse)': {
-            'algo': VotingRegressor,
-            'def_params': {},
-            },
+        'Stacking': StackingRegressor(estimators = []),
+        'Voting': VotingRegressor(estimators = []),
 }
 
 models_stacking_class = {
-        'Stacking (all)': {
-            'algo': StackingClassifier,
-            'def_params': {'final_estimator': linear_model.LogisticRegression()},
-            },
-        'Voting (all)': {
-            'algo': VotingClassifier,
-            'def_params': {'voting': 'hard'},
-            },
-        'Stacking (diverse)': {
-            'algo': StackingClassifier,
-            'def_params': {'final_estimator': linear_model.LogisticRegression()},
-            },
-        'Voting (diverse)': {
-            'algo': VotingClassifier,
-            'def_params': {'voting': 'hard'},
-            },
+        'Stacking': StackingClassifier(estimators = []),
+        'Voting (hard)': VotingClassifier(estimators = [], voting = 'hard'),
+        'Voting (soft)': VotingClassifier(estimators = [], voting = 'soft'),
 }
 
 
@@ -478,13 +450,13 @@ models_reg = {
             'algo': XGBRegressor,
             'space': space_xgb,
             'opt_params': {},
-            'def_params': {'tree_method': 'gpu_hist', 'random_state': 322}
+            'def_params': {'random_state': 322}
             },
         'LightGBM': {
             'algo': LGBMRegressor,
             'space': space_lgbm,
             'opt_params': {},
-            'def_params': {'device': 'gpu', 'random_state': 322}
+            'def_params': {'random_state': 322}
             },
         'Gradient Boost': {
             'algo': HistGradientBoostingRegressor,
@@ -516,12 +488,12 @@ models_reg = {
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
-        'EBM': {
-            'algo': ExplainableBoostingRegressor,
-            'space': space_ebm,
-            'opt_params': {},
-            'def_params': {'random_state': 322}
-            },
+        # 'EBM': {
+        #     'algo': ExplainableBoostingRegressor,
+        #     'space': space_ebm,
+        #     'opt_params': {},
+        #     'def_params': {'random_state': 322}
+        #     },
         'Elastic Net': {
             'algo': ElasticNet,
             'space': space_en,
@@ -550,13 +522,13 @@ models_reg = {
             'algo': Lars,
             'space': space_lars,
             'opt_params': {},
-            'def_params': {'random_state': 322}
+            'def_params': {'normalize': False, 'random_state': 322}
             },
         'Orthogonal Matching Pursuit': {
             'algo': OrthogonalMatchingPursuit,
             'space': space_omp,
             'opt_params': {},
-            'def_params': {}
+            'def_params': {'normalize': False},
             },
         'Multi-layer Perceptron': {
             'algo': MLPRegressor,
@@ -593,8 +565,9 @@ models_reg = {
             'space': space_ransac,
             'opt_params': {},
             'def_params': {'random_state': 322}
-            },
-}
+            }
+        
+        }
 
 models_class = {
         'Bagging': {
@@ -649,13 +622,13 @@ models_class = {
             'algo': XGBClassifier,
             'space': space_xgb,
             'opt_params': {},
-            'def_params': {'tree_method': 'gpu_hist', 'random_state': 322}
+            'def_params': {'random_state': 322}
             },
         'LightGBM': {
             'algo': LGBMClassifier,
             'space': space_lgbm,
             'opt_params': {},
-            'def_params': {'device': 'gpu', 'random_state': 322}
+            'def_params': {'random_state': 322}
             },
         'Gradient Boost': {
             'algo': HistGradientBoostingClassifier,
@@ -687,12 +660,12 @@ models_class = {
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
-        'EBM': {
-            'algo': ExplainableBoostingClassifier,
-            'space': space_ebm,
-            'opt_params': {},
-            'def_params': {'random_state': 322}
-            },
+        # 'EBM': {
+        #     'algo': ExplainableBoostingClassifier,
+        #     'space': space_ebm,
+        #     'opt_params': {},
+        #     'def_params': {'random_state': 322}
+        #     },
         'Logistic Regression': {
             'algo': LogisticRegression,
             'space': space_LOGReg,
@@ -717,10 +690,10 @@ models_class = {
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
-        'Stochastic Gradient Descent': {
-            'algo': SGDClassifier,
-            'space': space_sgd,
-            'opt_params': {},
-            'def_params': {'random_state': 322}
-            },
+        # 'Stochastic Gradient Descent': {
+        #     'algo': SGDClassifier,
+        #     'space': space_sgd,
+        #     'opt_params': {},
+        #     'def_params': {'random_state': 322}
+        #     },
     }
