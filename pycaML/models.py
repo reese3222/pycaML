@@ -35,8 +35,6 @@ from sklearn.linear_model import Ridge
 from sklearn.linear_model import Lasso
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from interpret.glassbox import ExplainableBoostingClassifier
-from interpret.glassbox import ExplainableBoostingRegressor
 from sklearn.naive_bayes import GaussianNB
 from sklearn.linear_model import PassiveAggressiveClassifier
 from sklearn.linear_model import PassiveAggressiveRegressor
@@ -57,11 +55,6 @@ from sklearn.ensemble import BaggingRegressor
 from sklearn.linear_model import BayesianRidge
 from sklearn.linear_model import HuberRegressor
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
-
-bagging_models = ['Random Forest', 'ExtraTrees']
-boosting_models = ['EBM', 'XGBoost', 'CatBoost', 'LightGBM', 'Gradient Boost']
-simple_models_reg = ['KNN', 'Elastic Net', 'Decision Tree']
-simple_models_class = ['KNN', 'Logistic Regression', 'Decision Tree']
 
 space_en = {
     'random_state': 322,
@@ -118,13 +111,14 @@ space_xgb = {
 
 space_lgbm = {
     'random_state': 322,
+    'verbose': -1,
     'n_estimators':        scope.int(hp.quniform('n_estimators', 20, 250, 10)),
     'learning_rate': hp.loguniform('learning_rate', -7, 0),
     'min_data_in_leaf': scope.int(hp.loguniform('min_data_in_leaf', 0.7, 7)),
     'max_depth':        hp.choice('max_depth', [-1, scope.int(hp.uniform('max_depth2', 1, 8))]),
     'feature_fraction': hp.uniform('feature_fraction', 0.5, 1),
     'lambda_l1': hp.choice('lambda_l1', [0, hp.loguniform('lambda_l1_positive', -16, 2)]),
-    'lambda_l2': hp.choice('lambda_l2', [0, hp.loguniform('lambda_l2_positive', -16, 2)])
+    'lambda_l2': hp.choice('lambda_l2', [0, hp.loguniform('lambda_l2_positive', -16, 2)]),
 }
 
 space_adab = {
@@ -276,7 +270,7 @@ space_svc = {
     'gamma': hp.choice('gamma', ['scale', 'auto']),
     'coef0': hp.loguniform('coef0', -7, 7),
     'shrinking': hp.choice('shrinking', [True, False]),
-    'probability': hp.choice('probability', [True, False]),
+    'probability': hp.choice('probability', [True]),
     'tol': hp.loguniform('tol', -10, -1),
     'cache_size': hp.loguniform('cache_size', 1, 4),
     'class_weight': hp.choice('class_weight', [None, 'balanced']),
@@ -347,9 +341,8 @@ space_br = {
     'lambda_2': hp.loguniform('lambda_2', -8, -1),
     'compute_score': hp.choice('compute_score', [False, True]),
     'fit_intercept': hp.choice('fit_intercept', [True, False]),
-    'normalize': hp.choice('normalize', [False, True]),
-    'copy_X': hp.choice('copy_X', [True, False]),
-    'verbose': hp.choice('verbose', [False, True]),
+    'copy_X': hp.choice('copy_X', [True]),
+    'verbose': hp.choice('verbose', [False]),
     }
 
 
@@ -660,12 +653,6 @@ models_class = {
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
-        # 'EBM': {
-        #     'algo': ExplainableBoostingClassifier,
-        #     'space': space_ebm,
-        #     'opt_params': {},
-        #     'def_params': {'random_state': 322}
-        #     },
         'Logistic Regression': {
             'algo': LogisticRegression,
             'space': space_LOGReg,
@@ -690,10 +677,4 @@ models_class = {
             'opt_params': {},
             'def_params': {'random_state': 322}
             },
-        # 'Stochastic Gradient Descent': {
-        #     'algo': SGDClassifier,
-        #     'space': space_sgd,
-        #     'opt_params': {},
-        #     'def_params': {'random_state': 322}
-        #     },
     }
