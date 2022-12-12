@@ -336,6 +336,20 @@ class Experiment:
             pickle.dump(trial, f)
         return space_eval(self.models[model_name]['space'], best)
 
+    def predict(self, model_name, proba=False):
+        """Funcion that returns model's predictions
+
+        Args:
+            model_name (str): name of the model to predict - must be in the models dictionary.
+            proba (bool, optional): Return probabilities. Defaults to False.
+
+        Returns:
+            array: predictions
+        """
+        model = self.models[model_name]['algo'](**self.models[model_name]['def_params'])
+        model.fit(self.X_train, self.y_train)
+        return model.predict_proba(self.X_test)[:,1] if proba else model.predict(self.X_test)
+
     def stack(self, n_estimators = 10, estimators = 'best'):
         """Start stacking process. This function trains a stacking and
 
